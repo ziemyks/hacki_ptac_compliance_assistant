@@ -108,10 +108,23 @@ export function analyzeCompliance(labels: any[]): ProductAnalysis {
         });
     }
 
+    // Dynamic scoring logic
+    let totalScore = 0;
+    if (facts.length > 0) {
+        const scores = facts.map(f => {
+            if (f.status === "compliant") return 100;
+            if (f.status === "unknown") return 75;
+            if (f.status === "warning") return 50;
+            if (f.status === "non-compliant") return 0;
+            return 50;
+        });
+        totalScore = Math.round(scores.reduce((a, b) => a + b, 0) / scores.length);
+    }
+
     return {
         productName,
         description: `${productName} identificēts ar vizuālo analīzi.`,
         facts,
-        complianceScore: 50 // Placeholder for scoring logic
+        complianceScore: totalScore
     };
 }
