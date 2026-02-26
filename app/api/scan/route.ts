@@ -16,8 +16,8 @@ export async function POST(req: NextRequest) {
         // 1. Identify product with Rekognition (Labels + Text)
         const results = await identifyProduct(buffer);
 
-        // 2. Analyze compliance using both labels and text
-        const analysis = analyzeCompliance(results);
+        // 2. Analyze compliance using both labels and text with LLM
+        const analysis = await analyzeCompliance(results);
 
         return NextResponse.json(analysis);
     } catch (error) {

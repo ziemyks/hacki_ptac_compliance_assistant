@@ -62,84 +62,94 @@ function translateLabel(label: string): string {
     return label;
 }
 
-export function analyzeCompliance(results: { labels: any[], textDetections: any[] }): ProductAnalysis {
+import OpenAI from "openai";
+
+const openai = new OpenAI({
+    apiKey: process.env.OPENAI_API_KEY || "placeholder",
+});
+
+export async function analyzeCompliance(results: { labels: any[], textDetections: any[] }): Promise<ProductAnalysis> {
     const { labels, textDetections } = results;
 
-    // 1. Extract potential brand/model from text detections
-    // We look for capitalized words or lines that aren't common generic terms
+    // Fallback logic if OpenAI key is missing
+    if (!process.env.OPENAI_API_KEY || process.env.OPENAI_API_KEY === "YOUR_OPENAI_API_KEY" || process.env.OPENAI_API_KEY === "placeholder") {
+        return fallbackAnalysis(labels, textDetections);
+    }
+
+    const labelsText = labels.map((l: any) => l.Name).join(", ");
+    const detectedText = textDetections.map((t: any) => t.DetectedText).join(" ");
+
+    const prompt = `
+    Analizē produktu, pamatojoties uz šādiem vizuālajiem datiem no AWS Rekognition:
+    Objekti/Etiķetes: ${labelsText}
+    Nolasītais teksts uz preces: ${detectedText}
+
+    Tavs uzdevums ir atgriezt JSON objektu ar šādu struktūru:
+    {
+      "productName": "Precīzs preces nosaukums latviski (oriģinālais nosaukums iekavās)",
+      "description": "Plašs un profesionāls preces apraksts latviešu valodā (vismaz 2-3 teikumi), balstoties uz vizuālajām pazīmēm.",
+      "facts": [
+        {
+          "id": "unique-id",
+          "title": "Fakta nosaukums (piem. Tehniskie parametri, Materiāls, Produkta mērķis, u.c.)",
+          "description": "Detalizēts fakta apraksts latviski",
+          "source": "Vizuālā analīze / Nozares standarti",
+          "status": "compliant | warning | non-compliant | unknown"
+        }
+      ],
+      "complianceScore": 0-100
+    }
+
+    Lūdzu, iekļauj vismaz 6-8 svarīgus faktus par produktu, padarot šo par "Rich Description":
+    1. Produkta fiziskās īpašības un vizuālais stāvoklis.
+    2. Lietošanas mērķis un mērķauditorija.
+    3. Atbilstība ES regulām (GPSR, CE marķējums, RoHS, rotaļlietu drošums, u.c.).
+    4. Drošības brīdinājumi vai riski.
+    
+    Atbildi TIKAI ar JSON.
+    `;
+
+    try {
+        const response = await openai.chat.completions.create({
+            model: "gpt-4o-mini",
+            messages: [{ role: "user", content: prompt }],
+            response_format: { type: "json_object" },
+        });
+
+        const content = response.choices[0].message.content;
+        if (!content) throw new Error("No content from OpenAI");
+
+        return JSON.parse(content) as ProductAnalysis;
+    } catch (error) {
+        console.error("OpenAI Analysis Error:", error);
+        return fallbackAnalysis(labels, textDetections);
+    }
+}
+
+function fallbackAnalysis(labels: any[], textDetections: any[]): ProductAnalysis {
     const textLines = textDetections
         .filter((t: any) => t.Type === "LINE" && t.Confidence > 85)
         .map((t: any) => t.DetectedText);
 
-    // Simple brand/model heuristic: prioritize the most prominent text lines
     const topText = textLines.slice(0, 2).join(" ");
-
-    // 2. Extract primary category from labels
     const primaryLabel = labels.find((l: any) => l.Name) || { Name: "Unknown Product" };
     const categoryName = translateLabel(primaryLabel.Name);
-
-    // 3. Construct final product name
     const productName = topText ? `${categoryName} (${topText})` : categoryName;
 
-    // Basic facts based on EU GPSR (General Product Safety Regulation)
     const facts: ComplianceFact[] = [
         {
             id: "gpsr-general-safety",
             title: "Vispārējā produktu drošuma regula (GPSR)",
-            description: "Saskaņā ar Regulu (ES) 2023/988 (GPSR) visiem tirgū laistajiem produktiem ir jābūt drošiem. Ražotājiem ir jāveic iekšējā riska analīze.",
+            description: "Saskaņā ar Regulu (ES) 2023/988 (GPSR) visiem tirgū laistajiem produktiem ir jābūt drošiem. Sistēma gaida OpenAI API atslēgu padziļinātai analīzei.",
             source: "EU 2023/988",
             status: "unknown"
-        },
-        {
-            id: "ce-marking",
-            title: "CE marķējums",
-            description: "Nepieciešams specifiskām produktu grupām (rotaļlietām, elektronikai, mašīnām), ko pārdod Eiropas Ekonomikas zonā (EEZ).",
-            source: "EU No 765/2008",
-            status: "warning"
         }
     ];
 
-    // Specific logic based on detected labels
-    const labelsText = labels.map((l: any) => l.Name?.toLowerCase()).join(" ");
-    const fullContext = (labelsText + " " + textLines.join(" ").toLowerCase());
-
-    if (fullContext.includes("toy") || fullContext.includes("child") || fullContext.includes("lego") || fullContext.includes("doll")) {
-        facts.push({
-            id: "toy-safety",
-            title: "Rotaļlietu drošuma direktīva",
-            description: "Prasības attiecībā uz fizikālajām un mehāniskajām īpašībām, uzliesmojamību, ķīmiskajām īpašībām un elektriskajām īpašībām.",
-            source: "2009/48/EC",
-            status: "warning"
-        });
-    }
-
-    if (fullContext.includes("electronics") || fullContext.includes("electrical") || fullContext.includes("plug") || fullContext.includes("phone") || fullContext.includes("computer")) {
-        facts.push({
-            id: "rohs",
-            title: "RoHS direktīva",
-            description: "Bīstamu vielu ierobežošana elektriskajās un elektroniskajās iekārtās. Jāpārliecinās par RoHS deklarācijas esamību.",
-            source: "2011/65/EU",
-            status: "unknown"
-        });
-    }
-
-    // Dynamic scoring logic
-    let totalScore = 0;
-    if (facts.length > 0) {
-        const scores = facts.map(f => {
-            if (f.status === "compliant") return 100;
-            if (f.status === "unknown") return 75;
-            if (f.status === "warning") return 50;
-            if (f.status === "non-compliant") return 0;
-            return 50;
-        });
-        totalScore = Math.round(scores.reduce((a: number, b: number) => a + b, 0) / scores.length);
-    }
-
     return {
         productName,
-        description: `${categoryName} identificēts ar vizuālo analīzi.${topText ? ` Atrasts teksts: ${topText}` : ''}`,
+        description: `${categoryName} identificēts ar vizuālo analīzi. Atrasts teksts: ${topText || 'Nav atrasts'}. Lūdzu, pievienojiet OPENAI_API_KEY .env failā pilnai analīzei.`,
         facts,
-        complianceScore: totalScore
+        complianceScore: 50
     };
 }
