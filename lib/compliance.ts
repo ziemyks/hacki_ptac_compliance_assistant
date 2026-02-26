@@ -13,24 +13,69 @@ export interface ProductAnalysis {
     complianceScore: number;
 }
 
+const TRANSLATIONS: Record<string, string> = {
+    "Toy": "Rotaļlieta",
+    "Child": "Bērns",
+    "Electronics": "Elektronika",
+    "Electrical": "Elektrisks",
+    "Plug": "Kontaktdakša",
+    "Construction": "Būvniecība",
+    "Building": "Ēka",
+    "Material": "Materiāls",
+    "Smart": "Vieds",
+    "Device": "Ierīce",
+    "Appliance": "Iekārta",
+    "Furniture": "Mēbeles",
+    "Clothing": "Apģērbs",
+    "Food": "Pārtika",
+    "Beverage": "Dzēriens",
+    "Vehicle": "Transportlīdzeklis",
+    "Tool": "Instruments",
+    "Personal Care": "Personīgā higiēna",
+    "Cosmetics": "Kosmētika",
+    "Kitchen": "Virtuve",
+    "Home": "Mājas",
+    "Garden": "Dārzs",
+    "Outdoor": "Āra",
+    "Sport": "Sports",
+    "Game": "Spēle",
+    "Book": "Grāmata",
+    "Jewelry": "Rotaslietas",
+    "Watch": "Pulkstenis",
+    "Phone": "Tālrunis",
+    "Computer": "Dators",
+    "Camera": "Kamera",
+    "Light": "Gaisma",
+    "Battery": "Akumulators",
+    "Machine": "Mašīna",
+    "Hardware": "Aperatūra",
+    "Plumbing": "Santehnika",
+    "Decor": "Dekors",
+    "Unknown Product": "Nezināma prece"
+};
+
+function translateLabel(label: string): string {
+    return TRANSLATIONS[label] || label;
+}
+
 export function analyzeCompliance(labels: any[]): ProductAnalysis {
     // Extract primary product name from labels
     const primaryLabel = labels.find(l => l.Name) || { Name: "Unknown Product" };
-    const productName = primaryLabel.Name;
+    const productName = translateLabel(primaryLabel.Name);
 
     // Basic facts based on EU GPSR (General Product Safety Regulation)
     const facts: ComplianceFact[] = [
         {
             id: "gpsr-general-safety",
-            title: "General Product Safety Regulation (GPSR)",
-            description: "Under Regulation (EU) 2023/988 (GPSR), all products placed on the market must be safe. Manufacturers must conduct internal risk analysis.",
+            title: "Vispārējā produktu drošuma regula (GPSR)",
+            description: "Saskaņā ar Regulu (ES) 2023/988 (GPSR) visiem tirgū laistajiem produktiem ir jābūt drošiem. Ražotājiem ir jāveic iekšējā riska analīze.",
             source: "EU 2023/988",
             status: "unknown"
         },
         {
             id: "ce-marking",
-            title: "CE Marking",
-            description: "Required for specific product groups (toys, electronics, machinery) sold within the European Economic Area (EEA).",
+            title: "CE marķējums",
+            description: "Nepieciešams specifiskām produktu grupām (rotaļlietām, elektronikai, mašīnām), ko pārdod Eiropas Ekonomikas zonā (EEZ).",
             source: "EU No 765/2008",
             status: "warning"
         }
@@ -42,8 +87,8 @@ export function analyzeCompliance(labels: any[]): ProductAnalysis {
     if (labelsText.includes("toy") || labelsText.includes("child")) {
         facts.push({
             id: "toy-safety",
-            title: "Toy Safety Directive",
-            description: "Requirements for physical and mechanical properties, flammability, chemical properties, and electrical properties.",
+            title: "Rotaļlietu drošuma direktīva",
+            description: "Prasības attiecībā uz fizikālajām un mehāniskajām īpašībām, uzliesmojamību, ķīmiskajām īpašībām un elektriskajām īpašībām.",
             source: "2009/48/EC",
             status: "warning"
         });
@@ -52,8 +97,8 @@ export function analyzeCompliance(labels: any[]): ProductAnalysis {
     if (labelsText.includes("electronics") || labelsText.includes("electrical") || labelsText.includes("plug")) {
         facts.push({
             id: "rohs",
-            title: "RoHS Directive",
-            description: "Restriction of Hazardous Substances in electrical and electronic equipment.",
+            title: "RoHS direktīva",
+            description: "Bīstamu vielu ierobežošana elektriskajās un elektroniskajās iekārtās.",
             source: "2011/65/EU",
             status: "unknown"
         });
@@ -61,7 +106,7 @@ export function analyzeCompliance(labels: any[]): ProductAnalysis {
 
     return {
         productName,
-        description: `A ${productName.toLowerCase()} identified by visual analysis.`,
+        description: `${productName} identificēts ar vizuālo analīzi.`,
         facts,
         complianceScore: 50 // Placeholder for scoring logic
     };
