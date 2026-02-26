@@ -75,7 +75,23 @@ export default function Home() {
             onClick={() => document.getElementById('fileInput')?.click()}
           >
             {preview ? (
-              <img src={preview} alt="Preview" className="max-h-80 mx-auto rounded-lg shadow-md" />
+              <div className="relative group/preview">
+                <img src={preview} alt="Preview" className="max-h-80 mx-auto rounded-lg shadow-md" />
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setFile(null);
+                    setPreview(null);
+                    setResult(null);
+                  }}
+                  className="absolute top-2 right-2 p-2 bg-red-500 text-white rounded-full opacity-0 group-hover/preview:opacity-100 transition-opacity hover:bg-red-600 shadow-lg"
+                  title="Dzēst attēlu"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
             ) : (
               <div className="py-12 flex flex-col items-center text-slate-400">
                 <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center border shadow-sm mb-4">
