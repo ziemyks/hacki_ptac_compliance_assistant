@@ -1,10 +1,11 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f8fafc;
-  --foreground: #1e293b;
-  --primary: #2563eb;
-  --primary-foreground: #ffffff;
+  --background: #ffffff;
+  --foreground: #1c2e45;
+  --ptac-teal: #45a2a2;
+  --ptac-navy: #19365a;
+  --ptac-light-blue: #f0f7f7;
   --border: #e2e8f0;
 }
 
@@ -12,18 +13,33 @@ body {
   background-color: var(--background);
   color: var(--foreground);
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
 }
 
 @layer components {
-  .btn-primary {
-    @apply px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium shadow-sm;
+  .ptac-card {
+    @apply bg-ptac-light-blue border border-[#d1e5e5] rounded-lg p-8 transition-all hover:shadow-md relative overflow-hidden;
   }
-  
-  .card {
-    @apply bg-white border border-slate-200 rounded-xl shadow-sm p-6;
+
+  .ptac-btn-teal {
+    @apply px-6 py-2 bg-[#45a2a2] text-white rounded-md font-medium hover:bg-[#388e8e] transition-colors;
   }
-  
-  .input {
-    @apply w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all;
+
+  .ptac-btn-navy {
+    @apply px-8 py-3 bg-[#19365a] text-white rounded-md font-medium hover:bg-[#132a48] transition-colors flex items-center justify-center gap-2;
   }
+}
+
+.category-card {
+  @apply relative aspect-video overflow-hidden rounded-lg border border-slate-100 bg-white;
+}
+
+.category-card-overlay {
+  @apply absolute bottom-0 left-0 right-0 p-4 bg-white/90 backdrop-blur-sm flex items-center justify-between border-t border-slate-50;
+}
+
+.hero-gradient {
+  background: linear-gradient(rgba(255, 255, 255, 0.8), rgba(255, 255, 255, 0.8)), url('https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&q=80&w=2000');
+  background-size: cover;
+  background-position: center;
 }

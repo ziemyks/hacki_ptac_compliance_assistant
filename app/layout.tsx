@@ -5,8 +5,8 @@ import "./globals.css";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "PTAC Compliance Assistant",
-  description: "AI-powered product compliance analysis for businesses",
+  title: "PTAC Biznesam - Mērķauditorijas un Preču Saraksts",
+  description: "Latvijas Patērētāju tiesību aizsardzības centra portāls komersantiem",
 };
 
 export default function RootLayout({
@@ -15,19 +15,40 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="lv">
       <body className={inter.className}>
-        <div className="min-h-screen bg-[#f8fafc]">
-          <nav className="border-b bg-white/80 backdrop-blur-md sticky top-0 z-10">
-            <div className="max-w-5xl mx-auto px-8 h-16 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 bg-blue-600 rounded flex items-center justify-center text-white font-bold">P</div>
-                <span className="font-bold text-slate-900">PTAC Compliance Portal</span>
-              </div>
-              <div className="flex items-center gap-6 text-sm font-medium text-slate-600">
-                <a href="#" className="hover:text-blue-600 transition-colors">Guidelines</a>
-                <a href="#" className="hover:text-blue-600 transition-colors">History</a>
-                <a href="#" className="px-4 py-2 bg-slate-900 text-white rounded-lg hover:bg-slate-800 transition-all">Support</a>
+        <div className="min-h-screen">
+          <nav className="bg-white border-b sticky top-0 z-50">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+              <div className="flex justify-between h-20 items-center">
+                <div className="flex items-center gap-4">
+                  <div className="flex flex-col text-[10px] items-center border p-1 rounded">
+                    <span className="font-serif">PTAC</span>
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-xs font-semibold text-gray-500 uppercase tracking-tight">Patērētāju tiesību</span>
+                    <span className="text-xs font-semibold text-gray-500 uppercase tracking-tight">aizsardzības centrs</span>
+                  </div>
+                </div>
+
+                <div className="hidden lg:flex items-center gap-8 text-sm font-medium text-[#19365a]">
+                  <a href="#" className="hover:text-[#45a2a2]">Sākums</a>
+                  <a href="#" className="hover:text-[#45a2a2]">Apmācības</a>
+                  <a href="#" className="hover:text-[#45a2a2]">Preces</a>
+                  <a href="#" className="hover:text-[#45a2a2]">Normatīvie akti</a>
+                  <a href="#" className="hover:text-[#45a2a2]">Preču atsaukumi</a>
+                  <a href="#" className="hover:text-[#45a2a2]">Palīgrīki</a>
+                  <a href="#" className="hover:text-[#45a2a2]">Kontakti</a>
+                </div>
+
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-1 text-sm font-medium">
+                    <span className="text-gray-400">🇬🇧</span>
+                  </div>
+                  <button className="ptac-btn-teal whitespace-nowrap">
+                    Piesakies konsultācijai
+                  </button>
+                </div>
               </div>
             </div>
           </nav>
