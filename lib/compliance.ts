@@ -55,7 +55,11 @@ const TRANSLATIONS: Record<string, string> = {
 };
 
 function translateLabel(label: string): string {
-    return TRANSLATIONS[label] || label;
+    const translation = TRANSLATIONS[label];
+    if (translation) {
+        return `${translation} (${label})`;
+    }
+    return label;
 }
 
 export function analyzeCompliance(labels: any[]): ProductAnalysis {
