@@ -62,9 +62,6 @@ export default function Home() {
         {/* Simplified Scan Section */}
         <section className="bg-white p-8 md:p-12 rounded-2xl shadow-sm border border-slate-100 max-w-4xl mx-auto">
           <div className="mb-10 text-center">
-            <span className="bg-[#f0f7f7] px-4 py-1.5 rounded-md text-sm font-medium text-[#45a2a2] uppercase tracking-wider">
-              AI Atbilstības Analīze
-            </span>
             <h1 className="text-3xl font-bold text-[#19365a] mt-4">
               Preces pārbaude ar PTAC atbilstības asistentu
             </h1>
