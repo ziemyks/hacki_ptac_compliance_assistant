@@ -62,15 +62,15 @@ function translateLabel(label: string): string {
     return label;
 }
 
-import { GoogleGenerativeAI, SchemaType } from "@google/generative-ai";
-
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "placeholder");
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
 export async function analyzeCompliance(results: { labels: any[], textDetections: any[] }): Promise<ProductAnalysis> {
     const { labels, textDetections } = results;
+    const apiKey = process.env.GEMINI_API_KEY;
 
     // Fallback logic if Gemini key is missing
-    if (!process.env.GEMINI_API_KEY || process.env.GEMINI_API_KEY === "YOUR_GEMINI_API_KEY" || process.env.GEMINI_API_KEY === "placeholder") {
+    if (!apiKey || apiKey === "YOUR_GEMINI_API_KEY" || apiKey === "placeholder") {
+        console.warn("Gemini API key is missing or placeholder. Falling back to basic analysis.");
         return fallbackAnalysis(labels, textDetections);
     }
 
@@ -84,19 +84,29 @@ export async function analyzeCompliance(results: { labels: any[], textDetections
 
     Tavs uzdevums ir atgriezt JSON objektu latviešu valodā.
     STRUKTŪRA:
-    - productName: Precīzs preces nosaukums latviski (zīmols un modelis iekavās).
-    - description: Plašs un profesionāls preces apraksts latviešu valodā (vismaz 2-3 teikumi).
-    - facts: Saraksts ar faktiem (id, title, description, source, status).
-        * status var būt: compliant, warning, non-compliant, unknown.
-    - complianceScore: Atbilstības procents (0-100).
+    {
+      "productName": "Precīzs preces nosaukums latviski (zīmols un modelis iekavās)",
+      "description": "Plašs un profesionāls preces apraksts latviešu valodā (vismaz 2-3 teikumi).",
+      "facts": [
+        {
+          "id": "unique-id",
+          "title": "Fakta nosaukums",
+          "description": "Detalizēts fakta apraksts",
+          "source": "Vizuālā analīze / Nozares standarti",
+          "status": "compliant | warning | non-compliant | unknown"
+        }
+      ],
+      "complianceScore": 0-100
+    }
 
     Lūdzu, iekļauj vismaz 6-8 svarīgus faktus (tehniskie parametri, mērķis, ES regulas GPSR, CE, RoHS, drošība).
     Analīzei jābūt institūcijas līmenī (PTAC stils).
     `;
 
     try {
+        const genAI = new GoogleGenerativeAI(apiKey);
         const model = genAI.getGenerativeModel({
-            model: "gemini-1.5-flash",
+            model: "gemini-1.5-flash-latest",
             generationConfig: {
                 responseMimeType: "application/json",
             },
@@ -130,7 +140,7 @@ function fallbackAnalysis(labels: any[], textDetections: any[]): ProductAnalysis
             {
                 id: "gpsr",
                 title: "Vispārējā drošuma regula",
-                description: "Sistēma gaida Gemini API atslēgu padziļinātai analīzei.",
+                description: "Saskaņā ar Regulu (ES) 2023/988 visiem produktiem jābūt drošiem. Gemini analīze nav pieejama.",
                 source: "EU 2023/988",
                 status: "unknown"
             }

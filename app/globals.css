@@ -1,12 +1,14 @@
 @import "tailwindcss";
 
+@theme {
+  --color-ptac-teal: #45a2a2;
+  --color-ptac-navy: #19365a;
+  --color-ptac-light-blue: #f0f7f7;
+}
+
 :root {
   --background: #ffffff;
   --foreground: #1c2e45;
-  --ptac-teal: #45a2a2;
-  --ptac-navy: #19365a;
-  --ptac-light-blue: #f0f7f7;
-  --border: #e2e8f0;
 }
 
 body {
@@ -22,11 +24,11 @@ body {
   }
 
   .ptac-btn-teal {
-    @apply px-6 py-2 bg-[#45a2a2] text-white rounded-md font-medium hover:bg-[#388e8e] transition-colors;
+    @apply px-6 py-2 bg-ptac-teal text-white rounded-md font-medium hover:brightness-90 transition-all;
   }
 
   .ptac-btn-navy {
-    @apply px-8 py-3 bg-[#19365a] text-white rounded-md font-medium hover:bg-[#132a48] transition-colors flex items-center justify-center gap-2;
+    @apply px-8 py-3 bg-ptac-navy text-white rounded-md font-medium hover:brightness-110 transition-all flex items-center justify-center gap-2;
   }
 }
 
