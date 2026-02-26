@@ -133,8 +133,8 @@ export default function Home() {
                   <div key={fact.id} className="bg-slate-50/50 p-6 rounded-xl border border-slate-100 hover:bg-white hover:shadow-md transition-all duration-300">
                     <div className="flex items-start gap-5">
                       <div className={`mt-1.5 w-4 h-4 rounded-full flex-shrink-0 border-2 border-white shadow-sm ${fact.status === 'compliant' ? 'bg-green-500' :
-                          fact.status === 'warning' ? 'bg-yellow-500' :
-                            fact.status === 'non-compliant' ? 'bg-red-500' : 'bg-slate-300'
+                        fact.status === 'warning' ? 'bg-yellow-500' :
+                          fact.status === 'non-compliant' ? 'bg-red-500' : 'bg-slate-300'
                         }`} />
                       <div>
                         <h5 className="font-bold text-[#19365a] text-lg">{fact.title}</h5>
@@ -153,27 +153,5 @@ export default function Home() {
       </div>
     </main>
   );
-  <div className="ptac-card group">
-    <div className="flex justify-between items-start mb-4">
-      <h3 className="text-3xl font-bold text-[#19365a] tracking-tight">{title}</h3>
-      <span className="text-[#45a2a2] text-2xl font-light">+</span>
-    </div>
-    <p className="text-[#19365a]/70 text-lg leading-relaxed mb-10 pr-8">{desc}</p>
-    <div className="absolute bottom-8 left-8">
-      <svg className="w-8 h-8 text-[#45a2a2] transform group-hover:translate-x-2 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 8l4 4m0 0l-4 4m4-4H3" /></svg>
-    </div>
-  </div>
-  );
 }
 
-function CategoryCard({ title, img }: { title: string, img: string }) {
-  return (
-    <div className="category-card group cursor-pointer border border-[#d1e5e5]">
-      <img src={img} alt={title} className="w-full h-64 object-cover group-hover:scale-105 transition-transform duration-500" />
-      <div className="category-card-overlay">
-        <span className="font-bold text-[#19365a] text-lg">{title}</span>
-        <span className="text-[#45a2a2] text-xl">+</span>
-      </div>
-    </div>
-  );
-}
