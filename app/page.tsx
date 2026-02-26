@@ -66,7 +66,7 @@ export default function Home() {
               AI Atbilstības Analīze
             </span>
             <h1 className="text-3xl font-bold text-[#19365a] mt-4">
-              Preces pārbaude ar AWS Rekognition
+              Preces pārbaude ar PTAC atbilstības asistentu
             </h1>
             <p className="text-slate-500 mt-2">
               Augšupielādējiet produkta fotoattēlu, lai automātiski identificētu preci un analizētu tās atbilstību ES regulām.
