@@ -118,7 +118,7 @@ export function analyzeCompliance(labels: any[]): ProductAnalysis {
             if (f.status === "non-compliant") return 0;
             return 50;
         });
-        totalScore = Math.round(scores.reduce((a, b) => a + b, 0) / scores.length);
+        totalScore = Math.round(scores.reduce((a: number, b: number) => a + b, 0) / scores.length);
     }
 
     return {
