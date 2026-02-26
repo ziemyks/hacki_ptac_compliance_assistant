@@ -1,4 +1,4 @@
-import { RekognitionClient, DetectLabelsCommand } from "@aws-sdk/client-rekognition";
+import { RekognitionClient, DetectLabelsCommand, DetectTextCommand } from "@aws-sdk/client-rekognition";
 
 const rekognitionClient = new RekognitionClient({
   region: process.env.AWS_REGION || "eu-central-1",
@@ -9,18 +9,32 @@ const rekognitionClient = new RekognitionClient({
 });
 
 export async function identifyProduct(imageBuffer: Buffer) {
-  const params = {
+  const imageParams = {
     Image: {
       Bytes: imageBuffer,
     },
-    MaxLabels: 10,
-    MinConfidence: 75,
   };
 
   try {
-    const command = new DetectLabelsCommand(params);
-    const response = await rekognitionClient.send(command);
-    return response.Labels || [];
+    // Detect Labels
+    const labelsCommand = new DetectLabelsCommand({
+      ...imageParams,
+      MaxLabels: 10,
+      MinConfidence: 75,
+    });
+
+    // Detect Text (OCR)
+    const textCommand = new DetectTextCommand(imageParams);
+
+    const [labelsResponse, textResponse] = await Promise.all([
+      rekognitionClient.send(labelsCommand),
+      rekognitionClient.send(textCommand),
+    ]);
+
+    return {
+      labels: labelsResponse.Labels || [],
+      textDetections: textResponse.TextDetections || [],
+    };
   } catch (error) {
     console.error("Error identifying product with AWS Rekognition:", error);
     throw error;

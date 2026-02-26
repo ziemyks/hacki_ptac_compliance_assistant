@@ -13,11 +13,11 @@ export async function POST(req: NextRequest) {
 
         const buffer = Buffer.from(await file.arrayBuffer());
 
-        // 1. Identify product with Rekognition
-        const labels = await identifyProduct(buffer);
+        // 1. Identify product with Rekognition (Labels + Text)
+        const results = await identifyProduct(buffer);
 
-        // 2. Analyze compliance
-        const analysis = analyzeCompliance(labels);
+        // 2. Analyze compliance using both labels and text
+        const analysis = analyzeCompliance(results);
 
         return NextResponse.json(analysis);
     } catch (error) {

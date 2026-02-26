@@ -62,10 +62,24 @@ function translateLabel(label: string): string {
     return label;
 }
 
-export function analyzeCompliance(labels: any[]): ProductAnalysis {
-    // Extract primary product name from labels
-    const primaryLabel = labels.find(l => l.Name) || { Name: "Unknown Product" };
-    const productName = translateLabel(primaryLabel.Name);
+export function analyzeCompliance(results: { labels: any[], textDetections: any[] }): ProductAnalysis {
+    const { labels, textDetections } = results;
+
+    // 1. Extract potential brand/model from text detections
+    // We look for capitalized words or lines that aren't common generic terms
+    const textLines = textDetections
+        .filter((t: any) => t.Type === "LINE" && t.Confidence > 85)
+        .map((t: any) => t.DetectedText);
+
+    // Simple brand/model heuristic: prioritize the most prominent text lines
+    const topText = textLines.slice(0, 2).join(" ");
+
+    // 2. Extract primary category from labels
+    const primaryLabel = labels.find((l: any) => l.Name) || { Name: "Unknown Product" };
+    const categoryName = translateLabel(primaryLabel.Name);
+
+    // 3. Construct final product name
+    const productName = topText ? `${categoryName} (${topText})` : categoryName;
 
     // Basic facts based on EU GPSR (General Product Safety Regulation)
     const facts: ComplianceFact[] = [
@@ -86,9 +100,10 @@ export function analyzeCompliance(labels: any[]): ProductAnalysis {
     ];
 
     // Specific logic based on detected labels
-    const labelsText = labels.map(l => l.Name?.toLowerCase()).join(" ");
+    const labelsText = labels.map((l: any) => l.Name?.toLowerCase()).join(" ");
+    const fullContext = (labelsText + " " + textLines.join(" ").toLowerCase());
 
-    if (labelsText.includes("toy") || labelsText.includes("child")) {
+    if (fullContext.includes("toy") || fullContext.includes("child") || fullContext.includes("lego") || fullContext.includes("doll")) {
         facts.push({
             id: "toy-safety",
             title: "Rotaļlietu drošuma direktīva",
@@ -98,11 +113,11 @@ export function analyzeCompliance(labels: any[]): ProductAnalysis {
         });
     }
 
-    if (labelsText.includes("electronics") || labelsText.includes("electrical") || labelsText.includes("plug")) {
+    if (fullContext.includes("electronics") || fullContext.includes("electrical") || fullContext.includes("plug") || fullContext.includes("phone") || fullContext.includes("computer")) {
         facts.push({
             id: "rohs",
             title: "RoHS direktīva",
-            description: "Bīstamu vielu ierobežošana elektriskajās un elektroniskajās iekārtās.",
+            description: "Bīstamu vielu ierobežošana elektriskajās un elektroniskajās iekārtās. Jāpārliecinās par RoHS deklarācijas esamību.",
             source: "2011/65/EU",
             status: "unknown"
         });
@@ -123,7 +138,7 @@ export function analyzeCompliance(labels: any[]): ProductAnalysis {
 
     return {
         productName,
-        description: `${productName} identificēts ar vizuālo analīzi.`,
+        description: `${categoryName} identificēts ar vizuālo analīzi.${topText ? ` Atrasts teksts: ${topText}` : ''}`,
         facts,
         complianceScore: totalScore
     };
