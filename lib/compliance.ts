@@ -63,88 +63,143 @@ function translateLabel(label: string): string {
 }
 
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import * as dotenv from 'dotenv';
+import * as path from 'path';
 
-export async function analyzeCompliance(results: { labels: any[], textDetections: any[] }): Promise<ProductAnalysis> {
-    const { labels, textDetections } = results;
+// Force load .env from project root
+dotenv.config({ path: path.resolve(process.cwd(), '.env') });
+
+export async function identifyProduct(imageBuffer: Buffer, mimeType: string): Promise<{ productName: string, description: string }> {
     const apiKey = process.env.GEMINI_API_KEY;
 
-    // Fallback logic if Gemini key is missing
-    if (!apiKey || apiKey === "YOUR_GEMINI_API_KEY" || apiKey === "placeholder") {
-        console.warn("Gemini API key is missing or placeholder. Falling back to basic analysis.");
-        return fallbackAnalysis(labels, textDetections);
+    if (!apiKey || apiKey === "YOUR_GEMINI_API_KEY" || apiKey.length < 10) {
+        return {
+            productName: "Nezināma prece",
+            description: "Nav pieejama vizuālā analīze (trūkst API atslēgas)."
+        };
     }
 
-    const labelsText = labels.map((l: any) => l.Name).join(", ");
-    const detectedText = textDetections.map((t: any) => t.DetectedText).join(" ");
+    const prompt = `
+    UZDEVUMS: Produkta IDENTIFIKĀCIJA pēc attēla.
+    
+    Analizē pievienoto attēlu. Noteikt, KAS tas ir par produktu, kāda ir tā UZBŪVE un funkcionālā kategorija. Ignorē mārketingu.
+    
+    Atgriez JSON formātā:
+    {
+      "productName": "Funkcionāls preces nosaukums (piem., 'Makšķerēšanas spole')",
+      "description": "Tehnisks un objektīvs preces raksturojums par uzbūvi un pielietojumu (3-5 teikumi)."
+    }
+    `;
+
+    try {
+        const genAI = new GoogleGenerativeAI(apiKey);
+        const model = genAI.getGenerativeModel({
+            model: "gemini-2.5-flash",
+            generationConfig: { responseMimeType: "application/json" },
+        });
+
+        const imagePart = {
+            inlineData: {
+                data: imageBuffer.toString("base64"),
+                mimeType: mimeType
+            }
+        };
+
+        const result = await model.generateContent([prompt, imagePart]);
+        const response = await result.response;
+        return JSON.parse(response.text());
+    } catch (error: any) {
+        console.error("Gemini Identification Error:", error);
+        return { productName: "Kļūda", description: error.message };
+    }
+}
+
+export async function analyzeProductCompliance(
+    imageBuffer: Buffer,
+    mimeType: string,
+    context: { productName: string, productType: string, targetAudience: string }
+): Promise<ProductAnalysis> {
+    const apiKey = process.env.GEMINI_API_KEY;
+
+    if (!apiKey || apiKey === "YOUR_GEMINI_API_KEY" || apiKey.length < 10) {
+        return fallbackAnalysis(context.productName, "Trūkst API atslēgas");
+    }
 
     const prompt = `
-    Analizē produktu, pamatojoties uz šādiem vizuālajiem datiem no AWS Rekognition:
-    Objekti/Etiķetes: ${labelsText}
-    Nolasītais teksts uz preces: ${detectedText}
+    UZDEVUMS: Tehniski-normatīvā analīze no PTAC skatpunkta.
+     Produkts: ${context.productName}
+     Produkta veids: ${context.productType}
+     Mērķauditorija: ${context.targetAudience}
+    
+    Analizē pievienoto attēlu un ņem vērā norādīto kontekstu. Izveido detalizētu analīzi par atbilstību tirdzniecības noteikumiem un drošuma prasībām Latvijas un ES tirgū.
 
-    Tavs uzdevums ir atgriezt JSON objektu latviešu valodā.
-    STRUKTŪRA:
+    STRUKTŪRA (atgriez tikai JSON):
     {
-      "productName": "Precīzs preces nosaukums latviski (zīmols un modelis iekavās)",
-      "description": "Plašs un profesionāls preces apraksts latviešu valodā (vismaz 2-3 teikumi).",
+      "productName": "${context.productName}",
+      "description": "Tehnisks un objektīvs preces raksturojums.",
       "facts": [
         {
           "id": "unique-id",
-          "title": "Fakta nosaukums",
-          "description": "Detalizēts fakta apraksts",
-          "source": "Vizuālā analīze / Nozares standarti",
+          "title": "Tehnisks parametrs / Regulatīvā prasība",
+          "description": "Faktos balstīts skaidrojums par materiāliem, drošumu vai atbilstību ES regulām (GPSR, CE u.c.) pēc attēla un klienta sniegtajiem datiem.",
+          "source": "LV/ES Normatīvie akti",
           "status": "compliant | warning | non-compliant | unknown"
         }
       ],
       "complianceScore": 0-100
     }
 
-    Lūdzu, iekļauj vismaz 6-8 svarīgus faktus (tehniskie parametri, mērķis, ES regulas GPSR, CE, RoHS, drošība).
-    Analīzei jābūt institūcijas līmenī (PTAC stils).
+    Iekļauj 6-8 svarīgus faktus, īpaši fokusējoties uz:
+    - Materiālu sastāvu un funkcionālo drošību.
+    - Atbilstību GPSR un specifiskām direktīvām atkarībā no produkta veida (${context.productType}).
+    - Marķējuma atbilstību mērķauditorijai (${context.targetAudience}).
     `;
 
     try {
         const genAI = new GoogleGenerativeAI(apiKey);
         const model = genAI.getGenerativeModel({
-            model: "gemini-1.5-flash-latest",
-            generationConfig: {
-                responseMimeType: "application/json",
-            },
+            model: "gemini-2.5-flash",
+            generationConfig: { responseMimeType: "application/json" },
         });
 
-        const result = await model.generateContent(prompt);
-        const response = await result.response;
-        const text = response.text();
+        const imagePart = {
+            inlineData: {
+                data: imageBuffer.toString("base64"),
+                mimeType: mimeType
+            }
+        };
 
-        return JSON.parse(text) as ProductAnalysis;
-    } catch (error) {
-        console.error("Gemini Analysis Error:", error);
-        return fallbackAnalysis(labels, textDetections);
+        const result = await model.generateContent([prompt, imagePart]);
+        const response = await result.response;
+        return JSON.parse(response.text()) as ProductAnalysis;
+    } catch (error: any) {
+        console.error("Gemini Compliance Error:", error);
+        return fallbackAnalysis(context.productName, error.message);
     }
 }
 
-function fallbackAnalysis(labels: any[], textDetections: any[]): ProductAnalysis {
-    const textLines = textDetections
-        .filter((t: any) => t.Type === "LINE" && t.Confidence > 85)
-        .map((t: any) => t.DetectedText);
-
-    const topText = textLines.slice(0, 2).join(" ");
-    const primaryLabel = labels.find((l: any) => l.Name) || { Name: "Unknown Product" };
-    const categoryName = translateLabel(primaryLabel.Name);
-    const productName = topText ? `${categoryName} (${topText})` : categoryName;
-
+function fallbackAnalysis(categoryName: string, errorMsg?: string): ProductAnalysis {
     return {
-        productName,
-        description: `${categoryName} identificēts ar vizuālo analīzi. Pievienojiet GEMINI_API_KEY pilnam aprakstam.`,
+        productName: categoryName,
+        description: `${categoryName} identificēts pēc vizuālajām pazīmēm. Lai iegūtu detalizētu aprakstu un padziļinātu analīzi, nepieciešams aktīvs Gemini API savienojums.`,
         facts: [
             {
+                id: "general-info",
+                title: "Produkta identifikācija",
+                description: `Sistēma identificēja produktu kā "${categoryName}". Kļūda: ${errorMsg || 'nav'}.`,
+                source: "Vizuālā analīze",
+                status: "unknown"
+            },
+            {
                 id: "gpsr",
-                title: "Vispārējā drošuma regula",
-                description: "Saskaņā ar Regulu (ES) 2023/988 visiem produktiem jābūt drošiem. Gemini analīze nav pieejama.",
-                source: "EU 2023/988",
+                title: "Vispārējais drošums",
+                description: "Saskaņā ar Regulu (ES) 2023/988 (GPSR), produktam jāatbilst vispārējām drošuma prasībām. Gemini analīze pašlaik nav pieejama.",
+                source: "ES 2023/988",
                 status: "unknown"
             }
         ],
         complianceScore: 50
     };
 }
+
+console.log("Compliance Module Loaded - Version 2.0.3");
