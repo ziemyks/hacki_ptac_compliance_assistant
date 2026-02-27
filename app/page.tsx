@@ -22,12 +22,17 @@ export default function Home() {
   const [preview, setPreview] = useState<string | null>(null);
   const [scanning, setScanning] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
-  const [identification, setIdentification] = useState<{ productName: string, description: string } | null>(null);
+  const [identification, setIdentification] = useState<{
+    productName: string,
+    description: string,
+    clarifyingQuestions: { question: string, options: string[] }[]
+  } | null>(null);
   const [result, setResult] = useState<ProductAnalysis | null>(null);
 
   // New form state
   const [productType, setProductType] = useState<string | null>(null);
   const [targetAudience, setTargetAudience] = useState<string | null>(null);
+  const [answers, setAnswers] = useState<Record<string, string>>({});
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
@@ -37,6 +42,7 @@ export default function Home() {
       // Reset identification and results when a new file is uploaded
       setIdentification(null);
       setResult(null);
+      setAnswers({});
     }
   };
 
@@ -75,7 +81,8 @@ export default function Home() {
     formData.append("context", JSON.stringify({
       productName: identification.productName,
       productType: productTypes.find(t => t.id === productType)?.label || "fiziska prece",
-      targetAudience: targetAudiences.find(a => a.id === targetAudience)?.label || "B2C"
+      targetAudience: targetAudiences.find(a => a.id === targetAudience)?.label || "B2C",
+      answers: answers
     }));
 
     try {
@@ -264,9 +271,39 @@ export default function Home() {
                 </div>
               </div>
 
+              {/* Clarifying Questions Section */}
+              {identification && identification.clarifyingQuestions?.length > 0 && (
+                <div className="pt-4 border-t border-slate-100 animate-in fade-in slide-in-from-bottom-4 duration-700">
+                  <label className="block text-sm font-bold text-[#19365a] uppercase tracking-wider mb-4 flex items-center gap-2">
+                    <svg className="w-4 h-4 text-[#45a2a2]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    Papildus precizējumi:
+                  </label>
+                  <div className="space-y-4">
+                    {identification.clarifyingQuestions.map((q, idx) => (
+                      <div key={idx} className="bg-slate-50/80 p-4 rounded-xl border border-slate-100">
+                        <p className="text-sm font-medium text-slate-700 mb-3">{q.question}</p>
+                        <div className="flex flex-wrap gap-2">
+                          {(q.options || ['Jā', 'Nē', 'Nezinu']).map((option) => (
+                            <button
+                              key={option}
+                              onClick={() => setAnswers(prev => ({ ...prev, [q.question]: option }))}
+                              className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all border ${answers[q.question] === option ? 'bg-[#19365a] border-[#19365a] text-white' : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'}`}
+                            >
+                              {option}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               <button
                 onClick={handleCompliance}
-                disabled={!isFormComplete || analyzing}
+                disabled={!isFormComplete || analyzing || (identification?.clarifyingQuestions?.length > 0 && Object.keys(answers).length < identification.clarifyingQuestions.length)}
                 className="ptac-btn-teal w-full py-4 text-base font-bold shadow-lg shadow-[#45a2a2]/20 mt-4 disabled:opacity-50 disabled:grayscale transition-all"
               >
                 {analyzing ? (

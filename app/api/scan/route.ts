@@ -24,7 +24,8 @@ export async function POST(req: NextRequest) {
             const result = await analyzeProductCompliance(buffer, mimeType, {
                 productName: context.productName || "Nezināma prece",
                 productType: context.productType || "fiziska prece",
-                targetAudience: context.targetAudience || "B2C"
+                targetAudience: context.targetAudience || "B2C",
+                answers: context.answers || {}
             });
             return NextResponse.json(result);
         }
