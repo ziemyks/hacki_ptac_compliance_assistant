@@ -129,7 +129,13 @@ export async function identifyProduct(imageBuffer: Buffer, mimeType: string): Pr
         return JSON.parse(response.text());
     } catch (error: any) {
         console.error("Gemini Identification Error:", error);
-        return { productName: "Kļūda", description: error.message, clarifyingQuestions: [] };
+        return {
+            productName: "Kļūda",
+            description: error.message,
+            predictedType: "physical",
+            predictedAudience: "b2c",
+            clarifyingQuestions: []
+        };
     }
 }
 
