@@ -25,6 +25,8 @@ export default function Home() {
   const [identification, setIdentification] = useState<{
     productName: string,
     description: string,
+    predictedType?: string,
+    predictedAudience?: string,
     clarifyingQuestions: { question: string, options: string[] }[]
   } | null>(null);
   const [result, setResult] = useState<ProductAnalysis | null>(null);
@@ -64,6 +66,10 @@ export default function Home() {
       if (!response.ok) throw new Error("Identification failed");
       const data = await response.json();
       setIdentification(data);
+
+      // Auto-fill metadata if predicted by AI
+      if (data.predictedType) setProductType(data.predictedType);
+      if (data.predictedAudience) setTargetAudience(data.predictedAudience);
     } catch (error) {
       alert("Error identifying product.");
     } finally {

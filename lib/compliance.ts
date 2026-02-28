@@ -72,6 +72,8 @@ dotenv.config({ path: path.resolve(process.cwd(), '.env') });
 export async function identifyProduct(imageBuffer: Buffer, mimeType: string): Promise<{
     productName: string,
     description: string,
+    predictedType: string,
+    predictedAudience: string,
     clarifyingQuestions: { question: string, options: string[] }[]
 }> {
     const apiKey = process.env.GEMINI_API_KEY;
@@ -80,25 +82,28 @@ export async function identifyProduct(imageBuffer: Buffer, mimeType: string): Pr
         return {
             productName: "Nezināma prece",
             description: "Nav pieejama vizuālā analīze (trūkst API atslēgas).",
+            predictedType: "physical",
+            predictedAudience: "b2c",
             clarifyingQuestions: []
         };
     }
 
     const prompt = `
-    UZDEVUMS: Produkta IDENTIFIKĀCIJA pēc attēla un PRECIZĒJOŠU JAUTĀJUMU ģenerēšana ar specifiskām atbilžu opcijām.
+    UZDEVUMS: Produkta IDENTIFIKĀCIJA pēc attēla un PRECIZĒJOŠU JAUTĀJUMU ģenerēšana.
     
     1. Analizē pievienoto attēlu. Noteikt, KAS tas ir par produktu, kāda ir tā UZBŪVE un funkcionālā kategorija. Ignorē mārketingu.
-    2. Sastādi 2-3 specifiskus, tehniskus jautājumus latviešu valodā, kas ir būtiski, lai noteiktu precīzu ES/LV regulējumu šim produktam. 
-    3. Katram jautājumam piedāvā 2-4 specifiskas atbilžu opcijas (options), kas palīdzētu nodalīt piemērojamos tiesību aktus. 
-       - Ja jautājums par jaudu: ["Līdz 250W", "250W - 1000W", "Virs 1000W"].
-       - Ja jautājums par ātrumu: ["Līdz 25 km/h", "Virs 25 km/h"].
-       - Ja jautājums par savienojamību: ["Ir Wi-Fi/Bluetooth", "Nav bezvadu savienojuma"].
-       - Ja binārs jautājums: ["Jā", "Nē", "Nezinu"].
+    2. Klasificē produktu pēc šādām kategorijām (atgriez tikai identifikatoru):
+       - predictedType: "physical" (fiziska prece), "digital_content" (digitāls saturs), "digital_service" (digitāls pakalpojums), "combined" (kombinēts produkts).
+       - predictedAudience: "b2b" (tikai B2B), "b2c" (B2C patērētājiem), "mixed" (jaukts modelis).
+    3. Sastādi 2-3 specifiskus, tehniskus jautājumus latviešu valodā, kas ir būtiski, lai noteiktu precīzu ES/LV regulējumu šim produktam. 
+    4. Katram jautājumam piedāvā 2-4 specifiskas atbilžu opcijas (options).
 
     Atgriez JSON formātā:
     {
       "productName": "Funkcionāls preces nosaukums",
       "description": "Tehnisks un objektīvs preces raksturojums (3-5 teikumi).",
+      "predictedType": "physical | digital_content | digital_service | combined",
+      "predictedAudience": "b2b | b2c | mixed",
       "clarifyingQuestions": [
         { "question": "Jautājums 1?", "options": ["Opcija A", "Opcija B"] }
       ]
